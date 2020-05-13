@@ -1,0 +1,12 @@
+@import "./base.scss";
+
+html {
+  body {
+    background: #dcdcdc;
+    display: flex;
+    // font-family: "webfont" !important;
+    .box {
+      width: 100px;
+    }
+  }
+}
