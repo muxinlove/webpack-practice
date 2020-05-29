@@ -1,4 +1,5 @@
 const path = require('path')
+const os = require('os')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -10,11 +11,24 @@ const VueLoadPlugin = require('vue-loader/lib/plugin')
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 const smp = new SpeedMeasurePlugin();
 
-const BundleAnalyzerPlugin = require('webpack-bundle-a nalyzer').BundleAnalyzerPlugin;
+// const BundleAnalyzerPlugin = require('webpack-bundle-a nalyzer').BundleAnalyzerPlugin;
+
+// dll
+// const { DllReferencePlugin } = require('webpack')
+// const AddAssetHtmlWebpackPlugin = require('add-asset-html-webpack-plugin')
+
+const HardSourceWebpackPlugin = require('hard-source-webpack-plugin')
 
 // css摇树
 const PurifyCSS = require('purifycss-webpack')
 const glob = require('glob-all')
+
+// happypack
+const HappyPack = require('happypack')
+
+const happyThreadPool = HappyPack.ThreadPool({
+  size: os.cpus().length
+})
 
 const config = {
   mode: 'development',
@@ -33,64 +47,67 @@ const config = {
       {
         test: /\.css$/,
         include: path.resolve(__dirname, "./src"),
-        use: ['style-loader', 'css-loader']
+        // use: ['style-loader', 'css-loader']
+        use: ['happypack/loader?id=css']
       },
-      {
-        test: /\.(png|jpe?g|gif)$/,
-        // use: 'file-loader'
-        include: path.resolve(__dirname, "./src"),
-        use: {
-          loader: 'url-loader',
-          options: {
-            // ext 后缀
-            name: '[name]_[hash:6].[ext]',
-            outputPath: 'images/',
-            limit: 1024 * 10 // 单位为字节  小于这个限制 转为base64格式
-          }
-        }
-      },
-      {
-        test: /\.(eot|svg|ttf|woff|woff2)$/,
-        include: path.resolve(__dirname, "./src"),
-        use: {
-          loader: 'url-loader',
-          options: {
-            // ext 后缀
-            name: '[name].[ext]',
-            outputPath: 'webfont/'
-          }
-        }
-      },
+      // {
+      //   test: /\.(png|jpe?g|gif)$/,
+      //   // use: 'file-loader'
+      //   include: path.resolve(__dirname, "./src"),
+      //   use: {
+      //     loader: 'url-loader',
+      //     options: {
+      //       // ext 后缀
+      //       name: '[name]_[hash:6].[ext]',
+      //       outputPath: 'images/',
+      //       limit: 1024 * 10 // 单位为字节  小于这个限制 转为base64格式
+      //     }
+      //   }
+      // },
+      // {
+      //   test: /\.(eot|svg|ttf|woff|woff2)$/,
+      //   include: path.resolve(__dirname, "./src"),
+      //   use: {
+      //     loader: 'url-loader',
+      //     options: {
+      //       // ext 后缀
+      //       name: '[name].[ext]',
+      //       outputPath: 'webfont/'
+      //     }
+      //   }
+      // },
       {
         test: /\.scss$/,
         include: path.resolve(__dirname, "./src"),
-        use: [
-          // "style-loader",
-          MiniCssExtractPlugin.loader,
-          {
-            loader: "css-loader",
-          },
-          "postcss-loader",
-          "sass-loader"
-        ]
+        // use: [
+        //   "style-loader",
+        //   // MiniCssExtractPlugin.loader,
+        //   {
+        //     loader: "css-loader",
+        //   },
+        //   "postcss-loader",
+        //   "sass-loader"
+        // ],
+        use: ['happypack/loader?id=scss']
       },
       {
         test: /\.jsx?$/,
         include: path.resolve(__dirname, "./src"),
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: ["@babel/preset-env"]
-          }
-        }
+        // use: {
+        //   // loader: "babel-loader",
+        //   // options: {
+        //   //   presets: ["@babel/preset-env"]
+        //   // }
+        // }
+        use: ['happypack/loader?id=js']
       },
-      {
-        test: /.vue$/,
-        include: path.resolve(__dirname, "./src"),
-        use: [
-          'vue-loader'
-        ]
-      }
+      // {
+      //   test: /.vue$/,
+      //   include: path.resolve(__dirname, "./src"),
+      //   use: [
+      //     'vue-loader'
+      //   ]
+      // }
     ]
   },
   // devtool: "cheap-module-eval-source-map",
@@ -123,10 +140,16 @@ const config = {
   //   hotOnly: true
   // },
   plugins: [
-    new CleanWebpackPlugin(),
-    new MiniCssExtractPlugin({
-      filename: 'css/[name]-[contenthash:8].css'
-    }),
+    new CleanWebpackPlugin(
+      {
+        // protectWebpackAssets: true 不允许删除cleanOnceBeforeBuildPatterns 中的文件（默认是true）
+        // 初始化的时候清理 cleanOnceBeforeBuildPatterns
+        cleanOnceBeforeBuildPatterns: ['./dist/dll/*']
+      }
+    ),
+    // new MiniCssExtractPlugin({
+    //   filename: 'css/[name]-[contenthash:8].css'
+    // }),
     new HtmlWebpackPlugin({
       title: 'my app',
       filename: 'index.html',
@@ -140,7 +163,7 @@ const config = {
     // MiniCssExtractPlugin 对HMR支持不好
     // new webpack.HotModuleReplacementPlugin(),
 
-    new VueLoadPlugin(),
+    // new VueLoadPlugin(),
     // new OptimizeCSSAssetsPlugin({
     //   // cssnano 默认的一套压缩配置选项 postcss的依赖项，可以不install，直接用
     //   cssProcessor: require('cssnano'),
@@ -157,7 +180,41 @@ const config = {
         path.resolve(__dirname, './src/*.js')
       ])
     }),
-    new BundleAnalyzerPlugin(),
+    // new BundleAnalyzerPlugin(),
+    // new DllReferencePlugin({
+    //   manifest: path.resolve(__dirname, "./dll/react-manifest.json")
+    // }),
+    // new AddAssetHtmlWebpackPlugin({
+    //   filepath: path.resolve(__dirname, './dll/react.dll.js') // 对应的 dll ⽂件路径
+    // }),
+    new HardSourceWebpackPlugin(),
+
+    new HappyPack({
+      id: 'css',
+      loaders: ['style-loader', 'css-loader'],
+    }),
+
+    new HappyPack({
+      id: 'js',
+      loaders: [{
+        loader: 'babel-loader',
+        options: {
+          presets: ["@babel/preset-env"]
+        }
+      }]
+    }),
+
+    new HappyPack({
+      id: 'scss',
+      loaders: [
+        "style-loader",
+        "css-loader",
+        "postcss-loader",
+        "sass-loader"
+      ],
+      threadPool: happyThreadPool,
+    }),
+
   ],
   // resolve: {
   //   // 别名

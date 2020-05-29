@@ -58,11 +58,11 @@
 // import { add } from "./expo";
 // add(1, 2)
 
-// import _ from 'lodash'
+import _ from 'lodash'
 
-// console.log(_.join(['a', 'b', 'c'], '@@'))
+console.log(_.join(['a', 'b', 'c'], '@@'))
 
 
 
-import str from './hello.js';
-console.log(str)
+// import str from './hello.js';
+// console.log(str)
